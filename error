@@ -1,0 +1,73 @@
+/data_16t/wulinhui/anaconda3/lib/python3.8/site-packages/torchaudio/functional/functional.py:584: UserWarning: At least one mel filterbank has all zero values. The value for `n_mels` (128) may be set too high. Or, the value for `n_freqs` (201) may be set too low.
+  warnings.warn(
+
+class AudioLSTM(nn.Module):
+    def __init__(self, n_feature=168, out_feature=1, n_hidden=256, n_layers=2, drop_prob=0.5):
+        super(AudioLSTM, self).__init__()
+        self.drop_prob = drop_prob
+        self.n_layers = n_layers
+        self.n_hidden = n_hidden
+        self.n_feature = n_feature
+
+        # LSTM 层
+        self.lstm = nn.LSTM(self.n_feature, self.n_hidden, self.n_layers,
+                            dropout=self.drop_prob, batch_first=True)
+
+        # Dropout 层
+        self.dropout = nn.Dropout(drop_prob)
+
+        # 输出层
+        self.fc = nn.Linear(n_hidden, out_feature)
+
+        # Sigmoid 激活函数
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x, hidden):
+        # x.shape (batch, seq_len, n_features)
+        l_out, l_hidden = self.lstm(x, hidden)
+
+        # out.shape (batch, seq_len, n_hidden*direction)
+        out = self.dropout(l_out)
+
+        # out.shape (batch, out_feature)
+        out = self.fc(out[:, -1, :])  # 取序列的最后一个时间步的输出
+
+        # 使用 Sigmoid 将输出转换为概率
+        out = self.sigmoid(out)
+
+        # return the final output and the hidden state
+        return out, l_hidden
+
+    def init_hidden(self, batch_size):
+        weight = next(self.parameters()).data
+
+        # 初始化隐藏状态
+        hidden = (weight.new(self.n_layers, batch_size, self.n_hidden).zero_().cuda(),
+                  weight.new(self.n_layers, batch_size, self.n_hidden).zero_().cuda())
+        return hidden
+# 自定义数据集
+class AudioDataset(Dataset):
+    def __init__(self, audio_files, labels):
+        self.audio_files = audio_files
+        self.labels = labels  # 直接使用目标
+
+    def __len__(self):
+        return len(self.audio_files)
+
+    def __getitem__(self, idx):
+        # 加载音频文件
+        waveform, sample_rate = torchaudio.load(self.audio_files[idx])
+        pad_or_trim_waveform(waveform, sample_rate*12) 
+        # 提取特征
+        #生成梅尔频谱图(channels, n_mels, time)
+        mel_specgram = torchaudio.transforms.MelSpectrogram(sample_rate)(waveform)
+        #梅尔频谱图的标准化
+        mel_specgram_norm = (mel_specgram - mel_specgram.mean()) / mel_specgram.std()
+        #生成MFCC
+        mfcc = torchaudio.transforms.MFCC(sample_rate)(waveform)
+        #MFCC的标准化
+        mfcc_norm = (mfcc - mfcc.mean()) / mfcc.std()
+        #特征拼接得到(channels, n_mels+n_mcff, time)
+        feature = torch.cat([mel_specgram,mfcc], axis=1)
+        #去除channels这个维度，以及调换第二和第三维度
+        return feature[0].permute(1,0), self.labels[idx]
