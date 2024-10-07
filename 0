@@ -1,0 +1,93 @@
+def plot_loss(train_losses, val_losses):
+    epochs = range(1, num_epochs + 1)
+    print(len(train_losses),len(val_losses))
+    # 绘制 Loss 图
+    plt.figure(figsize=(8, 6))
+    plt.plot(epochs, train_losses, label='Training Loss', color='blue', linestyle='-')
+    plt.plot(epochs, val_losses, label='Validation Loss', color='orange', linestyle='--')
+    plt.title('Loss per Epochs')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    
+    # 保存图像
+    plt.savefig('./version0/images/loss.png')
+    plt.show()
+
+def plot_accuracy(train_accuracies, val_accuracies):
+    epochs = range(1, num_epochs + 1)
+
+    # 绘制 Accuracy 图
+    plt.figure(figsize=(8, 6))
+    plt.plot(epochs, train_accuracies, label='Training Accuracy', color='green', linestyle='-')
+    plt.plot(epochs, val_accuracies, label='Validation Accuracy', color='red', linestyle='--')
+    plt.title('Accuracy per Epochs')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    
+    # 保存图像
+    plt.savefig('./version0/images/accuracy.png')
+    plt.show()
+
+#在训练完成后绘制损失和精确度图像
+plot_loss(metrics_history['train_loss'], metrics_history['test_loss'])
+plot_accuracy(metrics_history['train_accuracy'], metrics_history['test_accuracy'])
+
+def plot_confusion_matrix(y_true, y_pred, class_names):
+    # 生成混淆矩阵
+    cm = confusion_matrix(y_true, y_pred)
+    
+    # 使用 seaborn 绘制热力图
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=class_names, yticklabels=class_names)
+    
+    # 添加图像标题和标签
+    plt.title('Confusion Matrix')
+    plt.xlabel('Predicted Label')
+    plt.ylabel('True Label')
+    
+    # 显示图像
+    plt.tight_layout()
+    plt.savefig('./version0/images/confusion_matrix.png')
+    plt.show()
+
+#绘制的其他测量指标
+def plot_other_metrics(metrics_history, train_times, test_times):
+    epochs = range(1, num_epochs + 1)
+
+    plt.figure(figsize=(12, 8))
+
+    # Highlighting Recall
+    plt.plot(epochs, metrics_history['recall'], label='Recall', color='red', linestyle='-', marker='o', linewidth=3, markersize=8)
+
+    # Plotting other metrics
+    plt.plot(epochs, metrics_history['precision'], label='Precision', linestyle='--', marker='x', color='gray')
+    plt.plot(epochs, metrics_history['f1'], label='F1 Score', linestyle=':', marker='d', color='blue')
+    plt.plot(epochs, metrics_history['roc_auc'], label='ROC AUC', linestyle='-.', marker='v', color='green')
+    plt.plot(epochs, metrics_history['balanced_accuracy'], label='Balanced Accuracy', linestyle='--', marker='^', color='orange')
+
+    plt.title('Model Other Metrics Over Epochs')
+    plt.xlabel('Epochs')
+    plt.ylabel('Score')
+    plt.legend(loc='best')
+
+    # 保存图像
+    plt.tight_layout()
+    plt.savefig('./version0/images/other_metrics_highlighted_recall.png')
+    plt.show()
+
+
+    # 绘制训练时间和测试时间
+    plt.figure(figsize=(6, 4))
+    plt.plot(epochs, train_times, label='Train Time')
+    plt.plot(epochs, test_times, label='Test Time')
+    plt.title('Train and Test Time Over Epochs')
+    plt.xlabel('Epochs')
+    plt.ylabel('Time (seconds)')
+    plt.legend()
+
+    # 保存时间图像
+    plt.tight_layout()
+    plt.savefig('./version0/images/train_test_time.png')
+    plt.show()
